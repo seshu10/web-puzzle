@@ -9,6 +9,8 @@ import {
 } from '@tmo/books/data-access';
 import { FormBuilder } from '@angular/forms';
 import { Book } from '@tmo/shared/models';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'tmo-book-search',
@@ -17,6 +19,7 @@ import { Book } from '@tmo/shared/models';
 })
 export class BookSearchComponent implements OnInit {
   books: ReadingListBook[];
+  searchTextChanged = new Subject<string>();  
 
   searchForm = this.fb.group({
     term: ''
@@ -35,6 +38,11 @@ export class BookSearchComponent implements OnInit {
     this.store.select(getAllBooks).subscribe(books => {
       this.books = books;
     });
+    this.searchTextChanged
+    .pipe(debounceTime(500), filter(res => res.length > 2), distinctUntilChanged())
+    .subscribe((searchstring) => {
+      this.setSearchText(searchstring);
+    });
   }
 
   formatDate(date: void | string) {
@@ -47,8 +55,8 @@ export class BookSearchComponent implements OnInit {
     this.store.dispatch(addToReadingList({ book }));
   }
 
-  searchExample() {
-    this.searchForm.controls.term.setValue('javascript');
+  setSearchText(searchstring: String) {
+    this.searchForm.controls.term.setValue(searchstring);
     this.searchBooks();
   }
 
@@ -58,5 +66,9 @@ export class BookSearchComponent implements OnInit {
     } else {
       this.store.dispatch(clearSearch());
     }
+  }
+
+  autoSearch(searchCriteria: any) {
+    this.searchTextChanged.next(searchCriteria.target.value);
   }
 }
