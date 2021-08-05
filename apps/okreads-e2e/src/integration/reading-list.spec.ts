@@ -19,6 +19,7 @@ describe('When: I use the reading list feature', () => {
     cy.get('#wantToRead_0').click();
     cy.get('[data-testing="toggle-reading-list"]').click();
     cy.get('#wantToRemove_0').click();
+    
   });
 
   it('Then: I should able to set marked as finished in my reading list', async () => {
