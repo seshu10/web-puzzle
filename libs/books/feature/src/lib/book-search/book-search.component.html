@@ -33,7 +33,7 @@
           <p [innerHTML]="b.description"></p>
           <div>
             <button
-              id="{{ 'wantToRead_' + i }}"
+              data-testing="{{ 'wantToRead_' + i }}"
               mat-flat-button
               color="primary"
               (click)="addBookToReadingList(b)"
