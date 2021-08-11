@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import {
   addToReadingList,
@@ -17,9 +17,9 @@ import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
   templateUrl: './book-search.component.html',
   styleUrls: ['./book-search.component.scss']
 })
-export class BookSearchComponent implements OnInit {
+export class BookSearchComponent implements OnInit, OnDestroy {
   books: ReadingListBook[];
-  searchTextChanged = new Subject<string>();  
+  searchTextChanged = new Subject<string>();
 
   searchForm = this.fb.group({
     term: ''
@@ -28,7 +28,7 @@ export class BookSearchComponent implements OnInit {
   constructor(
     private readonly store: Store,
     private readonly fb: FormBuilder
-  ) {}
+  ) { }
 
   get searchTerm(): string {
     return this.searchForm.value.term;
@@ -39,10 +39,10 @@ export class BookSearchComponent implements OnInit {
       this.books = books;
     });
     this.searchTextChanged
-    .pipe(debounceTime(500), filter(res => res.length > 2), distinctUntilChanged())
-    .subscribe((searchstring) => {
-      this.setSearchText(searchstring);
-    });
+      .pipe(debounceTime(500), filter(res => res.length > 2), distinctUntilChanged())
+      .subscribe((searchstring) => {
+        this.setSearchText(searchstring);
+      });
   }
 
   formatDate(date: void | string) {
@@ -70,5 +70,10 @@ export class BookSearchComponent implements OnInit {
 
   autoSearch(searchCriteria: any) {
     this.searchTextChanged.next(searchCriteria.target.value);
+  }
+
+  ngOnDestroy(): void {
+    this.searchTextChanged.next();
+    this.searchTextChanged.complete();
   }
 }
