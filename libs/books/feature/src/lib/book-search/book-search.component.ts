@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import {
   addToReadingList,
@@ -9,14 +9,17 @@ import {
 } from '@tmo/books/data-access';
 import { FormBuilder } from '@angular/forms';
 import { Book } from '@tmo/shared/models';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'tmo-book-search',
   templateUrl: './book-search.component.html',
   styleUrls: ['./book-search.component.scss']
 })
-export class BookSearchComponent implements OnInit {
+export class BookSearchComponent implements OnInit, OnDestroy {
   books: ReadingListBook[];
+  searchTextChanged = new Subject<string>();
 
   searchForm = this.fb.group({
     term: ''
@@ -25,7 +28,7 @@ export class BookSearchComponent implements OnInit {
   constructor(
     private readonly store: Store,
     private readonly fb: FormBuilder
-  ) {}
+  ) { }
 
   get searchTerm(): string {
     return this.searchForm.value.term;
@@ -35,6 +38,11 @@ export class BookSearchComponent implements OnInit {
     this.store.select(getAllBooks).subscribe(books => {
       this.books = books;
     });
+    this.searchTextChanged
+      .pipe(debounceTime(500), filter(res => res.length > 2), distinctUntilChanged())
+      .subscribe((searchstring) => {
+        this.setSearchText(searchstring);
+      });
   }
 
   formatDate(date: void | string) {
@@ -47,8 +55,8 @@ export class BookSearchComponent implements OnInit {
     this.store.dispatch(addToReadingList({ book }));
   }
 
-  searchExample() {
-    this.searchForm.controls.term.setValue('javascript');
+  setSearchText(searchstring: String) {
+    this.searchForm.controls.term.setValue(searchstring);
     this.searchBooks();
   }
 
@@ -58,5 +66,14 @@ export class BookSearchComponent implements OnInit {
     } else {
       this.store.dispatch(clearSearch());
     }
+  }
+
+  autoSearch(searchCriteria: any) {
+    this.searchTextChanged.next(searchCriteria.target.value);
+  }
+
+  ngOnDestroy(): void {
+    this.searchTextChanged.next();
+    this.searchTextChanged.complete();
   }
 }
